@@ -1,0 +1,10 @@
+{
+  "name": "Accident Reconstructor",
+  "short_name": "Reconstructor",
+  "start_url": "/accident-reconstructor/",
+  "scope": "/accident-reconstructor/",
+  "display": "standalone",
+  "background_color": "#f6f7f4",
+  "theme_color": "#182026",
+  "description": "Browser-first vehicle accident reconstruction workspace."
+}
