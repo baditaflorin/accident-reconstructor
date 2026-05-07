@@ -1,0 +1,113 @@
+package reconstruction
+
+import (
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"io"
+	"os"
+	"os/exec"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/baditaflorin/accident-reconstructor/pkg/reconstruct"
+)
+
+type ffprobeOutput struct {
+	Streams []struct {
+		Width        int    `json:"width"`
+		Height       int    `json:"height"`
+		AvgFrameRate string `json:"avg_frame_rate"`
+	} `json:"streams"`
+	Format struct {
+		Duration string `json:"duration"`
+	} `json:"format"`
+}
+
+func ProbeVideo(ctx context.Context, path string, fileName string) (reconstruct.UploadInfo, error) {
+	info := reconstruct.UploadInfo{FileName: fileName}
+	stat, err := os.Stat(path)
+	if err != nil {
+		return info, fmt.Errorf("stat upload: %w", err)
+	}
+	info.SizeBytes = stat.Size()
+	sum, err := fileSHA256(path)
+	if err != nil {
+		return info, err
+	}
+	info.SHA256 = sum
+
+	if _, err := exec.LookPath("ffprobe"); err != nil {
+		info.DurationSeconds = 5
+		return info, nil
+	}
+
+	probeCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+	out, err := exec.CommandContext(
+		probeCtx,
+		"ffprobe",
+		"-v", "error",
+		"-select_streams", "v:0",
+		"-show_entries", "stream=width,height,avg_frame_rate",
+		"-show_entries", "format=duration",
+		"-of", "json",
+		path,
+	).Output()
+	if err != nil {
+		info.DurationSeconds = 5
+		return info, nil
+	}
+
+	var parsed ffprobeOutput
+	if err := json.Unmarshal(out, &parsed); err != nil {
+		return info, fmt.Errorf("parse ffprobe output: %w", err)
+	}
+	if parsed.Format.Duration != "" {
+		info.DurationSeconds, _ = strconv.ParseFloat(parsed.Format.Duration, 64)
+	}
+	if len(parsed.Streams) > 0 {
+		stream := parsed.Streams[0]
+		info.Width = stream.Width
+		info.Height = stream.Height
+		info.FrameRate = parseFrameRate(stream.AvgFrameRate)
+	}
+	if info.DurationSeconds == 0 {
+		info.DurationSeconds = 5
+	}
+	return info, nil
+}
+
+func fileSHA256(path string) (string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return "", fmt.Errorf("open upload for checksum: %w", err)
+	}
+	defer file.Close()
+
+	hash := sha256.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		return "", fmt.Errorf("hash upload: %w", err)
+	}
+	return hex.EncodeToString(hash.Sum(nil)), nil
+}
+
+func parseFrameRate(value string) float64 {
+	if value == "" || value == "0/0" {
+		return 0
+	}
+	parts := strings.Split(value, "/")
+	if len(parts) == 1 {
+		rate, _ := strconv.ParseFloat(parts[0], 64)
+		return rate
+	}
+	num, _ := strconv.ParseFloat(parts[0], 64)
+	den, _ := strconv.ParseFloat(parts[1], 64)
+	if den == 0 {
+		return 0
+	}
+	return num / den
+}
