@@ -1,5 +1,11 @@
 import { execSync } from "node:child_process";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+
+const target = "src/generated/version.ts";
+
+if (process.env.UPDATE_VERSION !== "1" && existsSync(target)) {
+  process.exit(0);
+}
 
 const packageJson = JSON.parse(readFileSync("package.json", "utf8"));
 
@@ -15,11 +21,11 @@ function run(command, fallback) {
 
 const version = packageJson.version;
 const commit = run("git rev-parse --short HEAD", "dev");
-const builtAt = new Date().toISOString();
+const builtAt = run("git show -s --format=%cI HEAD", new Date().toISOString());
 
 mkdirSync("src/generated", { recursive: true });
 writeFileSync(
-  "src/generated/version.ts",
+  target,
   `export const APP_VERSION = ${JSON.stringify(version)}\n` +
     `export const APP_COMMIT = ${JSON.stringify(commit)}\n` +
     `export const APP_BUILT_AT = ${JSON.stringify(builtAt)}\n`,
