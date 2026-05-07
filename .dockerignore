@@ -1,0 +1,13 @@
+.git
+node_modules
+tmp
+coverage
+test-results
+docs/assets
+docs/screenshot.png
+dist
+.env
+.env.*
+!.env.example
+npm-debug.log*
+*.log
