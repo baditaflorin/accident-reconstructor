@@ -186,7 +186,8 @@ components:
           type: string
     UploadInfo:
       type: object
-      required: [fileName, sizeBytes, durationSeconds, width, height, frameRate, sha256]
+      required:
+        [fileName, sizeBytes, durationSeconds, width, height, frameRate, sha256]
       properties:
         fileName:
           type: string
@@ -205,7 +206,8 @@ components:
           type: string
     CaseSummary:
       type: object
-      required: [id, name, status, message, progress, createdAt, updatedAt, uploads]
+      required:
+        [id, name, status, message, progress, createdAt, updatedAt, uploads]
       properties:
         id:
           type: string
@@ -264,7 +266,8 @@ components:
             type: string
     CameraPose:
       type: object
-      required: [id, sourceVideo, timeSeconds, position, rotationEuler, focalLengthPx]
+      required:
+        [id, sourceVideo, timeSeconds, position, rotationEuler, focalLengthPx]
       properties:
         id:
           type: string
@@ -294,7 +297,17 @@ components:
           type: number
     SpeedEstimate:
       type: object
-      required: [method, meanMps, meanKph, meanMph, lowerKph, upperKph, confidence, notes]
+      required:
+        [
+          method,
+          meanMps,
+          meanKph,
+          meanMph,
+          lowerKph,
+          upperKph,
+          confidence,
+          notes,
+        ]
       properties:
         method:
           type: string

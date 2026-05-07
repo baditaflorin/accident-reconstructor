@@ -1,3 +1,4 @@
+// Package config loads runtime configuration from environment variables.
 package config
 
 import (
@@ -8,6 +9,7 @@ import (
 	"github.com/spf13/viper"
 )
 
+// Config contains all runtime settings for the API server.
 type Config struct {
 	Addr           string `envconfig:"ADDR"`
 	PublicBaseURL  string `envconfig:"PUBLIC_BASE_URL"`
@@ -20,6 +22,7 @@ type Config struct {
 	Commit         string `envconfig:"COMMIT"`
 }
 
+// Load reads configuration from environment variables with safe defaults.
 func Load() (Config, error) {
 	viper.SetDefault("ADDR", ":8080")
 	viper.SetDefault("PUBLIC_BASE_URL", "http://localhost:8080")

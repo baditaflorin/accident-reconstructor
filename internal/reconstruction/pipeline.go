@@ -13,11 +13,13 @@ import (
 	"github.com/baditaflorin/accident-reconstructor/pkg/reconstruct"
 )
 
+// Processor orchestrates reconstruction steps and artifact writing.
 type Processor struct {
 	Config config.Config
 	LLM    LLMClient
 }
 
+// ProcessInput describes one backend reconstruction job.
 type ProcessInput struct {
 	CaseID      string
 	CaseName    string
@@ -27,6 +29,7 @@ type ProcessInput struct {
 	ScaleMeters float64
 }
 
+// NewProcessor creates a reconstruction processor from runtime config.
 func NewProcessor(cfg config.Config) Processor {
 	return Processor{
 		Config: cfg,
@@ -37,6 +40,7 @@ func NewProcessor(cfg config.Config) Processor {
 	}
 }
 
+// Process runs reconstruction and writes artifacts into the case directory.
 func (p Processor) Process(ctx context.Context, input ProcessInput) (*reconstruct.Artifact, error) {
 	tools := DiscoverTools(ctx)
 	uploads := input.Uploads
@@ -74,7 +78,7 @@ func (p Processor) Process(ctx context.Context, input ProcessInput) (*reconstruc
 }
 
 func writeArtifactFiles(workDir string, artifact reconstruct.Artifact) error {
-	if err := os.MkdirAll(workDir, 0o755); err != nil {
+	if err := os.MkdirAll(workDir, 0o700); err != nil {
 		return fmt.Errorf("create case directory: %w", err)
 	}
 	jsonPath := filepath.Join(workDir, "reconstruction.json")
@@ -85,10 +89,10 @@ func writeArtifactFiles(workDir string, artifact reconstruct.Artifact) error {
 	if err != nil {
 		return fmt.Errorf("marshal artifact: %w", err)
 	}
-	if err := os.WriteFile(jsonPath, body, 0o644); err != nil {
+	if err := os.WriteFile(jsonPath, body, 0o600); err != nil {
 		return fmt.Errorf("write reconstruction artifact: %w", err)
 	}
-	if err := os.WriteFile(reportPath, []byte(artifact.ReportMarkdown), 0o644); err != nil {
+	if err := os.WriteFile(reportPath, []byte(artifact.ReportMarkdown), 0o600); err != nil {
 		return fmt.Errorf("write report artifact: %w", err)
 	}
 	if err := writeZip(bundlePath, map[string][]byte{
@@ -101,13 +105,12 @@ func writeArtifactFiles(workDir string, artifact reconstruct.Artifact) error {
 }
 
 func writeZip(path string, files map[string][]byte) error {
-	out, err := os.Create(path)
+	// #nosec G304 -- path is generated inside a case artifact directory.
+	out, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o600)
 	if err != nil {
 		return fmt.Errorf("create bundle: %w", err)
 	}
-	defer out.Close()
 	zipWriter := zip.NewWriter(out)
-	defer zipWriter.Close()
 
 	names := []string{"reconstruction.json", "report.md"}
 	for _, name := range names {
@@ -122,6 +125,13 @@ func writeZip(path string, files map[string][]byte) error {
 		if _, err := writer.Write(body); err != nil {
 			return fmt.Errorf("write bundle file: %w", err)
 		}
+	}
+	if err := zipWriter.Close(); err != nil {
+		_ = out.Close()
+		return fmt.Errorf("close bundle writer: %w", err)
+	}
+	if err := out.Close(); err != nil {
+		return fmt.Errorf("close bundle: %w", err)
 	}
 	return nil
 }

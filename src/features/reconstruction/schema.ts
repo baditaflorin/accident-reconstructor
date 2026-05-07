@@ -1,6 +1,6 @@
-import { z } from 'zod'
+import { z } from "zod";
 
-const vec3Schema = z.tuple([z.number(), z.number(), z.number()])
+const vec3Schema = z.tuple([z.number(), z.number(), z.number()]);
 
 export const artifactSchema = z.object({
   caseId: z.string(),
@@ -75,4 +75,4 @@ export const artifactSchema = z.object({
     reprojectionRmse: z.number().optional(),
   }),
   reportMarkdown: z.string(),
-})
+});

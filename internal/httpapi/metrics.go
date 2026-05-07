@@ -8,6 +8,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+// Metrics groups Prometheus collectors used by the API.
 type Metrics struct {
 	Requests       *prometheus.CounterVec
 	RequestLatency *prometheus.HistogramVec
@@ -16,6 +17,7 @@ type Metrics struct {
 	PipelineTime   prometheus.Histogram
 }
 
+// NewMetrics registers API and reconstruction metrics.
 func NewMetrics(reg prometheus.Registerer) Metrics {
 	m := Metrics{
 		Requests: prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -55,6 +57,7 @@ func (r *statusRecorder) WriteHeader(status int) {
 	r.ResponseWriter.WriteHeader(status)
 }
 
+// Middleware instruments HTTP requests.
 func (m Metrics) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()

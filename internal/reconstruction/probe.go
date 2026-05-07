@@ -27,6 +27,7 @@ type ffprobeOutput struct {
 	} `json:"format"`
 }
 
+// ProbeVideo extracts stable upload metadata using ffprobe when available.
 func ProbeVideo(ctx context.Context, path string, fileName string) (reconstruct.UploadInfo, error) {
 	info := reconstruct.UploadInfo{FileName: fileName}
 	stat, err := os.Stat(path)
@@ -47,6 +48,7 @@ func ProbeVideo(ctx context.Context, path string, fileName string) (reconstruct.
 
 	probeCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
+	// #nosec G204 -- ffprobe is a fixed binary and path is a saved upload.
 	out, err := exec.CommandContext(
 		probeCtx,
 		"ffprobe",
@@ -82,11 +84,12 @@ func ProbeVideo(ctx context.Context, path string, fileName string) (reconstruct.
 }
 
 func fileSHA256(path string) (string, error) {
+	// #nosec G304 -- path is produced by the upload storage layer.
 	file, err := os.Open(path)
 	if err != nil {
 		return "", fmt.Errorf("open upload for checksum: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	hash := sha256.New()
 	if _, err := io.Copy(hash, file); err != nil {

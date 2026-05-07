@@ -1,5 +1,5 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   BadgeDollarSign,
   Download,
@@ -11,7 +11,7 @@ import {
   Star,
   Upload,
   Video,
-} from 'lucide-react'
+} from "lucide-react";
 import {
   createCase,
   getApiBase,
@@ -21,101 +21,109 @@ import {
   setApiBase,
   type Artifact,
   type CaseSummary,
-} from '../../api/client'
-import { APP_BUILT_AT, APP_COMMIT, APP_VERSION } from '../../generated/version'
-import { loadLastArtifact, saveLastArtifact } from './storage'
-import { sampleArtifact } from './sampleArtifact'
+} from "../../api/client";
+import { APP_BUILT_AT, APP_COMMIT, APP_VERSION } from "../../generated/version";
+import { loadLastArtifact, saveLastArtifact } from "./storage";
+import { sampleArtifact } from "./sampleArtifact";
 
-const SceneViewer = lazy(() => import('./SceneViewer'))
+const SceneViewer = lazy(() => import("./SceneViewer"));
 
-const repoUrl = 'https://github.com/baditaflorin/accident-reconstructor'
-const paypalUrl = 'https://www.paypal.com/paypalme/florinbadita'
+const repoUrl = "https://github.com/baditaflorin/accident-reconstructor";
+const paypalUrl = "https://www.paypal.com/paypalme/florinbadita";
 
 export function ReconstructionWorkspace() {
-  const [apiBaseInput, setApiBaseInput] = useState(getApiBase)
-  const [apiBase, setCurrentApiBase] = useState(getApiBase)
-  const [caseName, setCaseName] = useState('Intersection reconstruction')
-  const [scaleMeters, setScaleMeters] = useState(10)
-  const [files, setFiles] = useState<File[]>([])
-  const [dragActive, setDragActive] = useState(false)
-  const [summary, setSummary] = useState<CaseSummary | null>(null)
-  const [artifact, setArtifact] = useState<Artifact | null>(null)
-  const [toast, setToast] = useState('')
+  const [apiBaseInput, setApiBaseInput] = useState(getApiBase);
+  const [apiBase, setCurrentApiBase] = useState(getApiBase);
+  const [caseName, setCaseName] = useState("Intersection reconstruction");
+  const [scaleMeters, setScaleMeters] = useState(10);
+  const [files, setFiles] = useState<File[]>([]);
+  const [dragActive, setDragActive] = useState(false);
+  const [summary, setSummary] = useState<CaseSummary | null>(null);
+  const [artifact, setArtifact] = useState<Artifact | null>(null);
+  const [toast, setToast] = useState("");
 
   useEffect(() => {
     loadLastArtifact().then((cached) => {
       if (cached) {
-        setArtifact(cached)
+        setArtifact(cached);
       }
-    })
-  }, [])
+    });
+  }, []);
 
   const toolsQuery = useQuery({
-    queryKey: ['tools', apiBase],
+    queryKey: ["tools", apiBase],
     queryFn: () => listTools(apiBase),
-  })
+  });
 
   const uploadMutation = useMutation({
     mutationFn: async () => {
       if (files.length === 0) {
-        throw new Error('Add at least one dashcam or phone video first.')
+        throw new Error("Add at least one dashcam or phone video first.");
       }
       const created = await createCase({
         apiBase,
         caseName,
         scaleMeters,
         files,
-      })
-      setSummary(created)
-      const completed = await pollUntilComplete(apiBase, created.id, setSummary)
-      const nextArtifact = await getArtifact(apiBase, completed.id)
-      setArtifact(nextArtifact)
-      await saveLastArtifact(nextArtifact)
-      return nextArtifact
+      });
+      setSummary(created);
+      const completed = await pollUntilComplete(
+        apiBase,
+        created.id,
+        setSummary,
+      );
+      const nextArtifact = await getArtifact(apiBase, completed.id);
+      setArtifact(nextArtifact);
+      await saveLastArtifact(nextArtifact);
+      return nextArtifact;
     },
     onError(error) {
-      setToast(error instanceof Error ? error.message : 'Reconstruction failed.')
+      setToast(
+        error instanceof Error ? error.message : "Reconstruction failed.",
+      );
     },
-  })
+  });
 
   const metrics = useMemo(() => {
     if (!artifact) {
       return [
-        ['Speed', 'Waiting'],
-        ['Confidence', 'Waiting'],
-        ['Sparse Points', '0'],
-        ['Videos', String(files.length)],
-      ]
+        ["Speed", "Waiting"],
+        ["Confidence", "Waiting"],
+        ["Sparse Points", "0"],
+        ["Videos", String(files.length)],
+      ];
     }
     return [
-      ['Speed', `${artifact.speed.meanKph.toFixed(1)} km/h`],
-      ['Confidence', `${Math.round(artifact.speed.confidence * 100)}%`],
-      ['Sparse Points', String(artifact.points.length)],
-      ['Videos', String(artifact.uploads.length)],
-    ]
-  }, [artifact, files.length])
+      ["Speed", `${artifact.speed.meanKph.toFixed(1)} km/h`],
+      ["Confidence", `${Math.round(artifact.speed.confidence * 100)}%`],
+      ["Sparse Points", String(artifact.points.length)],
+      ["Videos", String(artifact.uploads.length)],
+    ];
+  }, [artifact, files.length]);
 
   function applyApiBase() {
-    setApiBase(apiBaseInput)
-    setCurrentApiBase(apiBaseInput.replace(/\/$/, ''))
+    setApiBase(apiBaseInput);
+    setCurrentApiBase(apiBaseInput.replace(/\/$/, ""));
   }
 
   function handleFiles(nextFiles: FileList | File[]) {
-    setFiles(Array.from(nextFiles))
-    setToast('')
+    setFiles(Array.from(nextFiles));
+    setToast("");
   }
 
   function downloadArtifact() {
     if (!artifact) {
-      return
+      return;
     }
-    const blob = new Blob([JSON.stringify(artifact, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `${artifact.caseId}-reconstruction.json`
-    link.click()
-    URL.revokeObjectURL(url)
+    const blob = new Blob([JSON.stringify(artifact, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${artifact.caseId}-reconstruction.json`;
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   return (
@@ -127,15 +135,29 @@ export function ReconstructionWorkspace() {
           </div>
           <div>
             <h1>Accident Reconstructor</h1>
-            <p>3D crash scene reconstruction, speed ranges, and evidence bundles.</p>
+            <p>
+              3D crash scene reconstruction, speed ranges, and evidence bundles.
+            </p>
           </div>
         </div>
         <nav className="top-actions" aria-label="Project links">
-          <a className="btn btn-dark" href={repoUrl} target="_blank" rel="noreferrer" title="Star the GitHub repository">
+          <a
+            className="btn btn-dark"
+            href={repoUrl}
+            target="_blank"
+            rel="noreferrer"
+            title="Star the GitHub repository"
+          >
             <Star size={17} />
             Star on GitHub
           </a>
-          <a className="btn" href={paypalUrl} target="_blank" rel="noreferrer" title="Support the project on PayPal">
+          <a
+            className="btn"
+            href={paypalUrl}
+            target="_blank"
+            rel="noreferrer"
+            title="Support the project on PayPal"
+          >
             <BadgeDollarSign size={17} />
             Support
           </a>
@@ -156,7 +178,9 @@ export function ReconstructionWorkspace() {
               />
             </div>
             <div className="field">
-              <label htmlFor="scale-meters">Measured road reference in meters</label>
+              <label htmlFor="scale-meters">
+                Measured road reference in meters
+              </label>
               <input
                 id="scale-meters"
                 className="input"
@@ -171,15 +195,15 @@ export function ReconstructionWorkspace() {
               className="drop-zone"
               data-active={dragActive}
               onDragEnter={(event) => {
-                event.preventDefault()
-                setDragActive(true)
+                event.preventDefault();
+                setDragActive(true);
               }}
               onDragOver={(event) => event.preventDefault()}
               onDragLeave={() => setDragActive(false)}
               onDrop={(event) => {
-                event.preventDefault()
-                setDragActive(false)
-                handleFiles(event.dataTransfer.files)
+                event.preventDefault();
+                setDragActive(false);
+                handleFiles(event.dataTransfer.files);
               }}
             >
               <input
@@ -192,7 +216,9 @@ export function ReconstructionWorkspace() {
               <span>
                 <Upload size={26} aria-hidden="true" />
                 <strong>Drop dashcam and phone videos</strong>
-                <span className="hint">or click to choose files for backend reconstruction</span>
+                <span className="hint">
+                  or click to choose files for backend reconstruction
+                </span>
               </span>
             </label>
             <div className="file-list" aria-live="polite">
@@ -223,7 +249,11 @@ export function ReconstructionWorkspace() {
                 <RefreshCw size={16} />
                 Use API
               </button>
-              <button className="btn" type="button" onClick={() => setArtifact(sampleArtifact)}>
+              <button
+                className="btn"
+                type="button"
+                onClick={() => setArtifact(sampleArtifact)}
+              >
                 <Map size={16} />
                 Load Sample
               </button>
@@ -232,14 +262,19 @@ export function ReconstructionWorkspace() {
               {(toolsQuery.data ?? []).slice(0, 6).map((tool) => (
                 <div className="tool-row" key={tool.name}>
                   <span>{tool.name}</span>
-                  <span className="badge" data-tone={tool.status === 'available' ? undefined : 'warn'}>
+                  <span
+                    className="badge"
+                    data-tone={tool.status === "available" ? undefined : "warn"}
+                  >
                     {tool.status}
                   </span>
                 </div>
               ))}
               {toolsQuery.isError && (
                 <div className="warning-row">
-                  <span>Backend unavailable. The sample viewer still works on Pages.</span>
+                  <span>
+                    Backend unavailable. The sample viewer still works on Pages.
+                  </span>
                 </div>
               )}
             </div>
@@ -249,7 +284,10 @@ export function ReconstructionWorkspace() {
             <h2>Reconstruction</h2>
             {summary && (
               <>
-                <div className="progress" aria-label={`Progress ${summary.progress}%`}>
+                <div
+                  className="progress"
+                  aria-label={`Progress ${summary.progress}%`}
+                >
                   <span style={{ width: `${summary.progress}%` }} />
                 </div>
                 <p className="hint">{summary.message}</p>
@@ -265,12 +303,22 @@ export function ReconstructionWorkspace() {
                 <Play size={16} />
                 Run
               </button>
-              <button className="btn" type="button" disabled={!artifact} onClick={downloadArtifact}>
+              <button
+                className="btn"
+                type="button"
+                disabled={!artifact}
+                onClick={downloadArtifact}
+              >
                 <Download size={16} />
                 JSON
               </button>
-              {summary?.status === 'complete' && summary.artifactUrl && (
-                <a className="btn" href={`${apiBase}${summary.artifactUrl}`} target="_blank" rel="noreferrer">
+              {summary?.status === "complete" && summary.artifactUrl && (
+                <a
+                  className="btn"
+                  href={`${apiBase}${summary.artifactUrl}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
                   <FileArchive size={16} />
                   API Artifact
                 </a>
@@ -287,7 +335,10 @@ export function ReconstructionWorkspace() {
           )}
         </aside>
 
-        <section className="main-panel" aria-label="Reconstruction visualization">
+        <section
+          className="main-panel"
+          aria-label="Reconstruction visualization"
+        >
           <Suspense
             fallback={
               <div className="viewer-shell">
@@ -310,15 +361,18 @@ export function ReconstructionWorkspace() {
 
       <footer className="footer">
         <span>
-          Version {APP_VERSION} · commit {APP_COMMIT} · built {formatBuiltAt(APP_BUILT_AT)}
+          Version {APP_VERSION} · commit {APP_COMMIT} · built{" "}
+          {formatBuiltAt(APP_BUILT_AT)}
         </span>
         <span className="footer-links">
-          <a href={repoUrl}>https://github.com/baditaflorin/accident-reconstructor</a>
+          <a href={repoUrl}>
+            https://github.com/baditaflorin/accident-reconstructor
+          </a>
           <a href={paypalUrl}>https://www.paypal.com/paypalme/florinbadita</a>
         </span>
       </footer>
     </div>
-  )
+  );
 }
 
 async function pollUntilComplete(
@@ -327,30 +381,30 @@ async function pollUntilComplete(
   onUpdate: (summary: CaseSummary) => void,
 ) {
   for (let attempt = 0; attempt < 120; attempt += 1) {
-    const next = await getCase(apiBase, caseId)
-    onUpdate(next)
-    if (next.status === 'complete') {
-      return next
+    const next = await getCase(apiBase, caseId);
+    onUpdate(next);
+    if (next.status === "complete") {
+      return next;
     }
-    if (next.status === 'failed') {
-      throw new Error(next.error?.message ?? 'Reconstruction failed.')
+    if (next.status === "failed") {
+      throw new Error(next.error?.message ?? "Reconstruction failed.");
     }
-    await new Promise((resolve) => setTimeout(resolve, 1_000))
+    await new Promise((resolve) => setTimeout(resolve, 1_000));
   }
-  throw new Error('Timed out waiting for reconstruction.')
+  throw new Error("Timed out waiting for reconstruction.");
 }
 
 function formatBytes(value: number) {
   if (value < 1024 * 1024) {
-    return `${(value / 1024).toFixed(1)} KB`
+    return `${(value / 1024).toFixed(1)} KB`;
   }
-  return `${(value / (1024 * 1024)).toFixed(1)} MB`
+  return `${(value / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function formatBuiltAt(value: string) {
-  const date = new Date(value)
+  const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
-    return value
+    return value;
   }
-  return date.toISOString().slice(0, 10)
+  return date.toISOString().slice(0, 10);
 }

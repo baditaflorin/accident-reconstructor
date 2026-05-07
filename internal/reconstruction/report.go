@@ -7,6 +7,7 @@ import (
 	"github.com/baditaflorin/accident-reconstructor/pkg/reconstruct"
 )
 
+// BuildReport renders a cautious Markdown reconstruction report.
 func BuildReport(artifact reconstruct.Artifact) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "# Accident Reconstruction Report\n\n")

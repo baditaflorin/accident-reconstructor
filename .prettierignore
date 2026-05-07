@@ -1,0 +1,11 @@
+node_modules
+docs/assets
+docs/index.html
+docs/404.html
+src/api/schema.d.ts
+src/generated/version.ts
+go.sum
+package-lock.json
+tmp
+coverage
+dist

@@ -1,3 +1,4 @@
+// Package reconstruction orchestrates tool discovery, estimation, and artifacts.
 package reconstruction
 
 import (
@@ -7,6 +8,7 @@ import (
 	"github.com/baditaflorin/accident-reconstructor/pkg/reconstruct"
 )
 
+// EstimateInput contains normalized data used by the fallback estimator.
 type EstimateInput struct {
 	CaseID      string
 	CaseName    string
@@ -17,6 +19,7 @@ type EstimateInput struct {
 	Toolchain   []reconstruct.ToolStatus
 }
 
+// EstimateScene creates a deterministic reconstruction artifact.
 func EstimateScene(input EstimateInput) reconstruct.Artifact {
 	duration := maxDuration(input.Uploads)
 	scale := input.ScaleMeters

@@ -1,3 +1,4 @@
+// Command server runs the accident reconstruction API.
 package main
 
 import (

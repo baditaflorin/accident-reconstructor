@@ -1,3 +1,4 @@
+// Package jobs tracks reconstruction case state for the API process.
 package jobs
 
 import (
@@ -9,6 +10,7 @@ import (
 	"github.com/baditaflorin/accident-reconstructor/pkg/reconstruct"
 )
 
+// Case stores runtime case state and generated artifacts.
 type Case struct {
 	Summary  reconstruct.CaseSummary
 	WorkDir  string
@@ -16,15 +18,18 @@ type Case struct {
 	Report   string
 }
 
+// Store is an in-memory case registry for the current API process.
 type Store struct {
 	mu    sync.RWMutex
 	cases map[string]Case
 }
 
+// NewStore creates an empty case store.
 func NewStore() *Store {
 	return &Store{cases: make(map[string]Case)}
 }
 
+// Create inserts a new queued case.
 func (s *Store) Create(name string, workDir string, uploads []reconstruct.UploadInfo) Case {
 	now := time.Now().UTC()
 	id := uuid.NewString()
@@ -47,6 +52,7 @@ func (s *Store) Create(name string, workDir string, uploads []reconstruct.Upload
 	return item
 }
 
+// SetProcessing marks a case as processing with progress.
 func (s *Store) SetProcessing(id string, message string, progress int) bool {
 	return s.update(id, func(item *Case) {
 		item.Summary.Status = reconstruct.StatusProcessing
@@ -55,12 +61,14 @@ func (s *Store) SetProcessing(id string, message string, progress int) bool {
 	})
 }
 
+// SetWorkDir records the artifact directory for a case.
 func (s *Store) SetWorkDir(id string, workDir string) bool {
 	return s.update(id, func(item *Case) {
 		item.WorkDir = workDir
 	})
 }
 
+// Complete stores the final artifact and report for a case.
 func (s *Store) Complete(id string, artifact *reconstruct.Artifact, report string) bool {
 	return s.update(id, func(item *Case) {
 		item.Artifact = artifact
@@ -74,6 +82,7 @@ func (s *Store) Complete(id string, artifact *reconstruct.Artifact, report strin
 	})
 }
 
+// Fail marks a case as failed with a structured API error.
 func (s *Store) Fail(id string, err reconstruct.ErrorResponse) bool {
 	return s.update(id, func(item *Case) {
 		item.Summary.Status = reconstruct.StatusFailed
@@ -83,6 +92,7 @@ func (s *Store) Fail(id string, err reconstruct.ErrorResponse) bool {
 	})
 }
 
+// Get returns a case by ID.
 func (s *Store) Get(id string) (Case, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -90,6 +100,7 @@ func (s *Store) Get(id string) (Case, bool) {
 	return item, ok
 }
 
+// List returns all case summaries known by this process.
 func (s *Store) List() []reconstruct.CaseSummary {
 	s.mu.RLock()
 	defer s.mu.RUnlock()

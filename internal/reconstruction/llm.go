@@ -12,12 +12,14 @@ import (
 	"github.com/baditaflorin/accident-reconstructor/pkg/reconstruct"
 )
 
+// LLMClient calls a local Ollama-compatible model for optional narrative text.
 type LLMClient struct {
 	BaseURL string
 	Model   string
 	Client  *http.Client
 }
 
+// Summary asks the local model for a short cautious case summary.
 func (c LLMClient) Summary(ctx context.Context, artifact reconstruct.Artifact) (string, error) {
 	if c.BaseURL == "" {
 		return "", nil
@@ -46,7 +48,7 @@ func (c LLMClient) Summary(ctx context.Context, artifact reconstruct.Artifact) (
 	if err != nil {
 		return "", fmt.Errorf("call ollama: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode >= 300 {
 		return "", fmt.Errorf("ollama returned %s", resp.Status)
 	}

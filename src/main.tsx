@@ -1,9 +1,9 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import './index.css'
-import App from './App.tsx'
-import { registerServiceWorker } from './registerServiceWorker.ts'
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import "./index.css";
+import App from "./App.tsx";
+import { registerServiceWorker } from "./registerServiceWorker.ts";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -12,14 +12,14 @@ const queryClient = new QueryClient({
       retry: 1,
     },
   },
-})
+});
 
-createRoot(document.getElementById('root')!).render(
+createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <App />
     </QueryClientProvider>
   </StrictMode>,
-)
+);
 
-registerServiceWorker()
+registerServiceWorker();

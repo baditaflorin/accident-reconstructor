@@ -9,6 +9,7 @@ import (
 	"github.com/baditaflorin/accident-reconstructor/pkg/reconstruct"
 )
 
+// DiscoverTools reports external reconstruction tool availability.
 func DiscoverTools(ctx context.Context) []reconstruct.ToolStatus {
 	names := []string{"colmap", "ffmpeg", "ffprobe", "gdalinfo", "python3", "ollama"}
 	result := make([]reconstruct.ToolStatus, 0, len(names))

@@ -1,3 +1,4 @@
+// Package httpapi exposes the REST API for reconstruction cases.
 package httpapi
 
 import (
@@ -24,7 +25,7 @@ func (a App) health(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (a App) ready(w http.ResponseWriter, _ *http.Request) {
-	if err := os.MkdirAll(a.Config.StorageDir, 0o755); err != nil {
+	if err := os.MkdirAll(a.Config.StorageDir, 0o700); err != nil {
 		writeError(w, http.StatusServiceUnavailable, "storage_unavailable", err.Error())
 		return
 	}
@@ -62,7 +63,7 @@ func (a App) createCase(w http.ResponseWriter, r *http.Request) {
 	}
 
 	workingRoot := filepath.Join(a.Config.StorageDir, time.Now().UTC().Format("20060102"))
-	if err := os.MkdirAll(workingRoot, 0o755); err != nil {
+	if err := os.MkdirAll(workingRoot, 0o700); err != nil {
 		writeError(w, http.StatusInternalServerError, "storage_error", err.Error())
 		return
 	}
@@ -70,7 +71,7 @@ func (a App) createCase(w http.ResponseWriter, r *http.Request) {
 	workDir := filepath.Join(workingRoot, caseItem.Summary.ID)
 	a.Store.SetWorkDir(caseItem.Summary.ID, workDir)
 	uploadsDir := filepath.Join(workDir, "uploads")
-	if err := os.MkdirAll(uploadsDir, 0o755); err != nil {
+	if err := os.MkdirAll(uploadsDir, 0o700); err != nil {
 		writeError(w, http.StatusInternalServerError, "storage_error", err.Error())
 		return
 	}
@@ -109,16 +110,17 @@ func (a App) saveUpload(
 	if err != nil {
 		return "", reconstruct.UploadInfo{}, fmt.Errorf("open upload: %w", err)
 	}
-	defer src.Close()
+	defer func() { _ = src.Close() }()
 
 	cleanName := filepath.Base(name)
 	path := filepath.Join(dir, cleanName)
-	dst, err := os.Create(path)
+	// #nosec G304 -- cleanName is filepath.Base and dir is controlled storage.
+	dst, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o600)
 	if err != nil {
 		return "", reconstruct.UploadInfo{}, fmt.Errorf("create upload: %w", err)
 	}
 	if _, err := io.Copy(dst, src); err != nil {
-		dst.Close()
+		_ = dst.Close()
 		return "", reconstruct.UploadInfo{}, fmt.Errorf("save upload: %w", err)
 	}
 	if err := dst.Close(); err != nil {

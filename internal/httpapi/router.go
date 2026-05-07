@@ -17,6 +17,7 @@ import (
 	"github.com/baditaflorin/accident-reconstructor/internal/reconstruction"
 )
 
+// App holds HTTP handler dependencies.
 type App struct {
 	Config    config.Config
 	Store     *jobs.Store
@@ -26,6 +27,7 @@ type App struct {
 	Logger    *slog.Logger
 }
 
+// NewRouter wires middleware and API routes.
 func NewRouter(cfg config.Config, store *jobs.Store, processor reconstruction.Processor) http.Handler {
 	reg := prometheus.DefaultRegisterer
 	app := App{

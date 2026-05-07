@@ -1,0 +1,70 @@
+services:
+  app:
+    image: ghcr.io/baditaflorin/accident-reconstructor:latest
+    env_file:
+      - .env
+    environment:
+      ADDR: :8080
+      STORAGE_DIR: /var/lib/accident-reconstructor/cases
+    volumes:
+      - cases:/var/lib/accident-reconstructor
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, /healthcheck]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 4G
+
+  nginx:
+    image: nginx:1.27-alpine
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "25342:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - letsencrypt:/etc/letsencrypt:ro
+    restart: unless-stopped
+    networks:
+      - internal
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  prometheus:
+    image: prom/prometheus:v3.8.0
+    profiles:
+      - observe
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    restart: unless-stopped
+    networks:
+      - internal
+
+volumes:
+  cases:
+  letsencrypt:
+  prometheus-data:
+
+networks:
+  internal:
+    driver: bridge

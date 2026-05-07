@@ -1,0 +1,22 @@
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        VERSION: dev
+        COMMIT: local
+    image: accident-reconstructor:dev
+    environment:
+      PUBLIC_BASE_URL: http://localhost:8080
+      PAGES_ORIGIN: http://localhost:5173
+      STORAGE_DIR: /var/lib/accident-reconstructor/cases
+    ports:
+      - "8080:8080"
+    read_only: false
+    volumes:
+      - ../tmp/dev-cases:/var/lib/accident-reconstructor/cases
+
+  nginx:
+    ports:
+      - "25342:443"
