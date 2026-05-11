@@ -42,6 +42,9 @@ func (a App) listCases(w http.ResponseWriter, _ *http.Request) {
 
 func (a App) createCase(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, a.Config.MaxUploadBytes)
+	// #nosec G120 -- bounded one line above by http.MaxBytesReader; the
+	// argument to ParseMultipartForm is the in-memory threshold, not the
+	// total upload limit.
 	if err := r.ParseMultipartForm(a.Config.MaxUploadBytes); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid_multipart", "Upload must be multipart/form-data.")
 		return

@@ -22,10 +22,17 @@ type ErrorResponse struct {
 }
 
 // UploadInfo records normalized metadata for an uploaded video.
+//
+// DurationSource records how the duration was obtained — "ffprobe" when the
+// native tool was available, "mp4_atom" when the pure-Go MP4/MOV parser
+// resolved it from the container header, or "placeholder" when neither
+// worked and a 5-second default was applied. Downstream estimators inspect
+// this to flag low-confidence cases.
 type UploadInfo struct {
 	FileName        string  `json:"fileName"`
 	SizeBytes       int64   `json:"sizeBytes"`
 	DurationSeconds float64 `json:"durationSeconds"`
+	DurationSource  string  `json:"durationSource,omitempty"`
 	Width           int     `json:"width"`
 	Height          int     `json:"height"`
 	FrameRate       float64 `json:"frameRate"`

@@ -42,7 +42,7 @@ func ProbeVideo(ctx context.Context, path string, fileName string) (reconstruct.
 	info.SHA256 = sum
 
 	if _, err := exec.LookPath("ffprobe"); err != nil {
-		info.DurationSeconds = 5
+		applyDurationFallback(&info, path)
 		return info, nil
 	}
 
@@ -60,7 +60,7 @@ func ProbeVideo(ctx context.Context, path string, fileName string) (reconstruct.
 		path,
 	).Output()
 	if err != nil {
-		info.DurationSeconds = 5
+		applyDurationFallback(&info, path)
 		return info, nil
 	}
 
@@ -70,6 +70,7 @@ func ProbeVideo(ctx context.Context, path string, fileName string) (reconstruct.
 	}
 	if parsed.Format.Duration != "" {
 		info.DurationSeconds, _ = strconv.ParseFloat(parsed.Format.Duration, 64)
+		info.DurationSource = "ffprobe"
 	}
 	if len(parsed.Streams) > 0 {
 		stream := parsed.Streams[0]
@@ -78,9 +79,23 @@ func ProbeVideo(ctx context.Context, path string, fileName string) (reconstruct.
 		info.FrameRate = parseFrameRate(stream.AvgFrameRate)
 	}
 	if info.DurationSeconds == 0 {
-		info.DurationSeconds = 5
+		applyDurationFallback(&info, path)
 	}
 	return info, nil
+}
+
+// applyDurationFallback sets info.DurationSeconds and DurationSource using the
+// pure-Go MP4/MOV atom parser when possible, and a clearly-labelled 5-second
+// placeholder when not. Speed estimates downstream check DurationSource to
+// know whether the input is trustworthy.
+func applyDurationFallback(info *reconstruct.UploadInfo, path string) {
+	if duration, err := readMP4Duration(path); err == nil && duration > 0 {
+		info.DurationSeconds = duration
+		info.DurationSource = "mp4_atom"
+		return
+	}
+	info.DurationSeconds = 5
+	info.DurationSource = "placeholder"
 }
 
 func fileSHA256(path string) (string, error) {

@@ -149,6 +149,12 @@ func qualityWarnings(
 	if !toolAvailable(tools, "ollama") {
 		warnings = append(warnings, "Local LLM is missing; report narrative used deterministic text.")
 	}
+	for _, upload := range uploads {
+		if upload.DurationSource == "placeholder" {
+			warnings = append(warnings,
+				"Duration for "+upload.FileName+" could not be measured (no ffprobe and the file is not an MP4/MOV with a readable mvhd atom); a 5-second placeholder was used and the speed estimate is unreliable.")
+		}
+	}
 	return warnings
 }
 
